@@ -11,6 +11,7 @@
 #include <avr/interrupt.h>
 #include "timer_simplified.h"
 #include "LCD8Bit.h"
+#include "TWI_slave.h"
 
 void KbdScan( void * param );
 
@@ -58,21 +59,32 @@ int main(void)
 	
 	LCD_init();
 	Event_Init();
+	TWI_Slave_Initialise(eeprom_read_byte(&my_ee_address)<<TWI_ADR_BITS|0<<TWI_GEN_BIT);
 
 	sei();
+
+    // Start the TWI transceiver to enable reception of the first command from the TWI Master.
+    TWI_Start_Transceiver();
 
 	Event_TimerUpdate( 0, 1000 );
 	
     while(1)
     {
         Event_WaitNext();
+		//TWI_statusReg_t status = TWI_Get_State_Info();
+		if (TWI_statusReg.RxDataInBuf == 1)
+		{
+			unsigned char toto;
+			TWI_Get_Data_From_Transceiver( &toto, 1);
+			print( toto );
+		}
     }
 }
 
 void KbdScan( void * param )
 {
 	//print('a');
-	//Event_TimerUpdate( 0, 1000 );
+	Event_TimerUpdate( 0, 1000 );
 }
 
 void I2cRXFct( void * param)
