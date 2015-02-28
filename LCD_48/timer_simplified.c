@@ -10,6 +10,7 @@
 #include "avr/sleep.h"
 #include "timer_simplified.h"
 #include "timer_config.h"
+#include "LCD_48.h"
 
 //uint8_t TimerMax=0, EventMax=0;
 
@@ -52,9 +53,9 @@ void Event_Init( void )
     TIM_TIM_MSK |= 1<<OCIE1A;
 #endif
 
-	cli();
+/*	cli();
 	sleep_enable();
-	sei();
+	sei();*/
 }
 
 #if TIMER_MAX != 0
