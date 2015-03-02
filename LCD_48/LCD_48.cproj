@@ -120,6 +120,12 @@
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Keyboard.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Keyboard.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="LCD8Bit.c">
       <SubType>compile</SubType>
     </Compile>

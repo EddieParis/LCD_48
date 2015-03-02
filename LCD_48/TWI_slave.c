@@ -235,7 +235,7 @@ ISR(TWI_vect)
       } 
       else                          // Master has sent a NACK before all data where sent.
       {*/
-        TWI_state = TWSR;                               // Store TWI State as errormessage.      
+        //TWI_state = TWSR;                               // Store TWI State as errormessage.      
       //}        
                                                         
       TWCR = (1<<TWEN)|                                 // Enable TWI-interface and release TWI pins

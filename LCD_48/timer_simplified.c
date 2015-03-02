@@ -29,10 +29,10 @@ void Event_Init( void )
 #if TIMER_MAX != 0
 	// configure pin of INT0 as output
 	// used to lock CPU when reading time
-	TIM_INT_DDR |= 1<< TIM_INT_DDRBIT;
+	//TIM_INT_DDR |= 1<< TIM_INT_DDRBIT;
 	
 	// Enable int1
-	TIM_INT_MSK |= 1<<TIM_INT_INT;
+	//TIM_INT_MSK |= 1<<TIM_INT_INT;
 
     /* Timer 1 */
     /* Set counter to 0 */
@@ -63,12 +63,18 @@ void Event_Init( void )
 uint32_t Event_GetTime( void )
 {
 	// generate interrupt INTx
-	TIM_INT_PORT &= ~(1<<TIM_INT_PORTBIT);
+/*	TIM_INT_PORT &= ~(1<<TIM_INT_PORTBIT);
 
 	while( can_read_time == 0 );
 	
 	can_read_time = 0;
 
+	return readable_time;
+*/
+	cli();
+	readable_time = current_ms;
+	sei();
+	
 	return readable_time;
 }
 /*
@@ -216,12 +222,13 @@ ISR(TIMER1_COMPA_vect)
 		while( index );
 	}
 }
-
+/*
 ISR(TIM_INT_vect)
 {
-	/* Clear interrupt */
+	// Clear interrupt
 	TIM_INT_PORT |= 1<<TIM_INT_PORTBIT;
 	
 	readable_time = current_ms;
 	can_read_time = 1;
 }
+*/
