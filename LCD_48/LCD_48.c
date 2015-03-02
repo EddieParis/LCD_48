@@ -71,13 +71,6 @@ int main(void)
     while(1)
     {
         Event_WaitNext();
-		//TWI_statusReg_t status = TWI_Get_State_Info();
-		if (TWI_statusReg.RxDataInBuf == 1)
-		{
-			unsigned char toto;
-			TWI_Get_Data_From_Transceiver( &toto, 1);
-			print( toto );
-		}
     }
 }
 
@@ -89,6 +82,13 @@ void KbdScan( void * param )
 
 void I2cRXFct( void * param)
 {
+		//TWI_statusReg_t status = TWI_Get_State_Info();
+//		if (TWI_DataInRx() == 0)
+		{
+			unsigned char toto;
+			print( toto = TWI_Get_1Byte_From_Transceiver( ) );
+			TWI_TransmitByte( toto );
+		}
 	
 }
 

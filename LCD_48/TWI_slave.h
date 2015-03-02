@@ -24,8 +24,23 @@
   TWI Status/Control register definitions
 ****************************************************************************/
 
-#define TWI_BUFFER_SIZE 4      // Reserves memory for the drivers transceiver buffer. 
-                               // Set this to the largest message size that will be sent including address byte.
+// permitted RX buffer sizes: 1, 2, 4, 8, 16, 32, 64, 128 or 256
+
+#define TWI_RX_BUFFER_SIZE  ( 128 )
+#define TWI_RX_BUFFER_MASK  ( TWI_RX_BUFFER_SIZE - 1 )
+
+#if ( TWI_RX_BUFFER_SIZE & TWI_RX_BUFFER_MASK )
+#  error TWI RX buffer size is not a power of 2
+#endif
+
+// permitted TX buffer sizes: 1, 2, 4, 8, 16, 32, 64, 128 or 256
+
+#define TWI_TX_BUFFER_SIZE ( 16 )
+#define TWI_TX_BUFFER_MASK ( TWI_TX_BUFFER_SIZE - 1 )
+
+#if ( TWI_TX_BUFFER_SIZE & TWI_TX_BUFFER_MASK )
+#  error TWI TX buffer size is not a power of 2
+#endif
 
 /****************************************************************************
   Global definitions
@@ -53,9 +68,14 @@ extern union TWI_statusReg_t TWI_statusReg;
 void TWI_Slave_Initialise( unsigned char );
 unsigned char TWI_Transceiver_Busy( void );
 unsigned char TWI_Get_State_Info( void );
-void TWI_Start_Transceiver_With_Data( unsigned char * , unsigned char );
+//void TWI_Start_Transceiver_With_Data( unsigned char * , unsigned char );
+void    TWI_TransmitByte( uint8_t data );
+uint8_t TWI_DataInRx( void );
+
+
 void TWI_Start_Transceiver( void );
-unsigned char TWI_Get_Data_From_Transceiver( unsigned char *, unsigned char );
+//unsigned char TWI_Get_Data_From_Transceiver( unsigned char *, unsigned char );
+uint8_t TWI_Get_1Byte_From_Transceiver( void );
 
 /****************************************************************************
   Bit and byte definitions
