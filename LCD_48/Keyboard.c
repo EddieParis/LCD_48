@@ -47,7 +47,7 @@ uint8_t performScan(void)
 		PORTD = 0x70;	// need this write after setting output bit - pullup on the columns
 					// and force a low output on the row.
 		j=~(PIND >> 4) & 0x07;
-		DDRD = 0;		// set all rows back to input
+		DDRD = (1<<KBD_INT_BIT);		// set all rows back to input
 		if (j > 3) j=3;	// bit 0x04 = column 3
 		if (j) break;
 	}
@@ -68,7 +68,7 @@ uint8_t readKeyb(void)
 
 	// last char, interrupt fall
 	if (KeyHead == KeyTail)
-		KBD_INT_PORT &= (1<<KBD_INT_BIT);	// ensure interrupt off if buffer empty
+		KBD_INT_PORT &= ~(1<<KBD_INT_BIT);	// ensure interrupt off if buffer empty
 
 	return ret;
 }

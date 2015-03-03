@@ -31,7 +31,7 @@ event_t Events[EVENT_MAX]={{I2cRXFct, 0, 0 ,1},{KbdEvent, 0, 0, 1}};
 #define CURSOR_DIRECTION 0x0e
 #define ENTRY_MODE 0x06
 #define LCD_CLEAR 0x01
-#define KEYB_DEBOUNCE 30	// 30 mS debounce
+#define KEYB_DEBOUNCE 6	// 6x5 = 30 mS debounce
 
 uint8_t EEMEM b_my_ee_address = MY_ADDRESS;
 uint8_t EEMEM b_my_ee_version_number = MY_VERSION_NUMBER;
@@ -62,6 +62,8 @@ int main(void)
 	Event_Init();
 	TWI_Slave_Initialise(eeprom_read_byte(&my_ee_address)<<TWI_ADR_BITS|0<<TWI_GEN_BIT);
 
+	printStrEE((uint8_t*)&ee_init_str);
+
 	sei();
 
     // Start the TWI transceiver to enable reception of the first command from the TWI Master.
@@ -85,14 +87,13 @@ void KbdScan( void * param )
 
 void I2cRXFct( void * param)
 {
-//		unsigned char toto;
-//		print( toto = TWI_Get_1Byte_From_Transceiver( ) );
-//		TWI_TransmitByte( toto );
 	uint8_t b,c;
 
+	// disable the event while we are looping in the rx buffer
 	Event_Enable( I2CRX_EVENT, 0 );
 	Event_ClearSignal( I2CRX_EVENT );
 
+	// loop in the buffer
 	while (TWI_DataInRx())
 	{
 		b = TWI_Get_1Byte_From_Transceiver();
@@ -189,7 +190,10 @@ void I2cRXFct( void * param)
 			break;
 		}
 	}
+	
+	cli();
 	Event_Enable( I2CRX_EVENT, 1 );	
+	sei();
 }
 
 void KbdEvent( void * param)
