@@ -188,7 +188,7 @@ uint8_t TWI_Get_1Byte_From_Transceiver( void )
 
 uint8_t TWI_DataInRx( void )
 {
-	return rxHead == rxTail;	
+	return rxHead != rxTail;	
 }
 
 // ********** Interrupt Handlers ********** //

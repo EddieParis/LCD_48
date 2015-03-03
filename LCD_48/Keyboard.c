@@ -32,9 +32,8 @@ uint8_t LastKeyState;
 void initKeyb(void)
 {
 	// Rows PD0-PD3,  Cols PD4,PD5,PD6 Interrupt PA0
-	DDRD = 0;	// PD0-PD6 input
-	DDRC |= (1<<DDC4);	// PC4 output
-	PORTC &= ~(1<<PORTC4);	// ensure interrupt off
+	DDRD = (1<<KBD_INT_BIT);	// PD0-PD6 input - PD7 out
+	KBD_INT_PORT &= ~(1<<KBD_INT_BIT);	// ensure interrupt off
 
 	KeyTimer = LastKeyState = KeyHead = KeyTail = 0;
 }
@@ -44,7 +43,7 @@ uint8_t performScan(void)
 	uint8_t i,j;
 	for (i=0; i<4; i++)
 	{
-		DDRD = (1 << i);	// scanned row as output
+		DDRD = (1<<KBD_INT_BIT)|(1 << i);	// scanned row as output
 		PORTD = 0x70;	// need this write after setting output bit - pullup on the columns
 					// and force a low output on the row.
 		j=~(PIND >> 4) & 0x07;
@@ -59,19 +58,29 @@ uint8_t performScan(void)
 uint8_t readKeyb(void)
 {
 	uint8_t ret;
-	if (KeyHead == KeyTail) return eeprom_read_byte(&ee_keyb_map[0]);
+
+	// Buffer empty send err code (from eeprom)
+	if (KeyHead == KeyTail)
+		return eeprom_read_byte(&ee_keyb_map[0]);
+
 	ret = KeyBuffer[KeyTail++];
 	KeyTail &= 0x0f;
-	if (KeyHead == KeyTail) PORTC &= (1<<PORTC4);	// ensure interrupt off if buffer empty
+
+	// last char, interrupt fall
+	if (KeyHead == KeyTail)
+		KBD_INT_PORT &= (1<<KBD_INT_BIT);	// ensure interrupt off if buffer empty
+
 	return ret;
 }
 
 void writeKeyb(uint8_t value)
 {
-	if (((KeyHead+1) & 0x0f) == KeyTail) return;	// overflow
+	if (((KeyHead+1) & 0x0f) == KeyTail)
+		return;	// overflow
+
 	KeyBuffer[KeyHead++] = value;
 	KeyHead &= 0x0f;
-	PORTC |= (1<<PORTC4);					// interrupt on
+	KBD_INT_PORT |= (1<<KBD_INT_BIT);					// interrupt on
 }
 
 void scanKeyb( void )		// called once a mS by timer interrupt

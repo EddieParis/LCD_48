@@ -93,101 +93,102 @@ void I2cRXFct( void * param)
 	Event_Enable( I2CRX_EVENT, 0 );
 	Event_ClearSignal( I2CRX_EVENT );
 
-	b = TWI_Get_1Byte_From_Transceiver();
-	switch (b)
+	while (TWI_DataInRx())
 	{
-		case 0xFE:					// LCD command
-			// commands expect a second character
-			c = TWI_Get_1Byte_From_Transceiver();
-			switch (c)
-			{
-				case 0xFE:				// escape for 0xFE
-					print(c);
-				break;
-				case 0xFF:				// escape for 0xFF
-					print(c);
-				break;
-				default:
-					commandWrite(c);
-				break;
-			}
-		break;
+		b = TWI_Get_1Byte_From_Transceiver();
+		switch (b)
+		{
+			case 0xFE:					// LCD command
+				// commands expect a second character
+				c = TWI_Get_1Byte_From_Transceiver();
+				switch (c)
+				{
+					case 0xFE:				// escape for 0xFE
+						print(c);
+					break;
+					case 0xFF:				// escape for 0xFF
+						print(c);
+					break;
+					default:
+						commandWrite(c);
+					break;
+				}
+			break;
 		
-		case 0xFF:					// special commands
-			c = TWI_Get_1Byte_From_Transceiver();
-			switch (c)
-			{
-				case 0x01:				// back light 0=off 1=on
-						if (TWI_Get_1Byte_From_Transceiver())	// on
-						PORTC |= (1<<PORTC3);		// make sure it is on
-					else
-						PORTC &= ~(1<<PORTC3);		// make sure it is off
-				break;
+			case 0xFF:					// special commands
+				c = TWI_Get_1Byte_From_Transceiver();
+				switch (c)
+				{
+					case 0x01:				// back light 0=off 1=on
+							if (TWI_Get_1Byte_From_Transceiver())	// on
+							PORTC |= (1<<PORTC3);		// make sure it is on
+						else
+							PORTC &= ~(1<<PORTC3);		// make sure it is off
+					break;
 
-				case 0x02:				// read eeprom byte
-					c = TWI_Get_1Byte_From_Transceiver();
-					// - we need the space (costs 18 bytes) -  if (c > 128 -(uint16_t)&my_ee_address) break;
-					TWI_TransmitByte(eeprom_read_byte(&my_ee_address + c));
-				break;
+					case 0x02:				// read eeprom byte
+						c = TWI_Get_1Byte_From_Transceiver();
+						// - we need the space (costs 18 bytes) -  if (c > 128 -(uint16_t)&my_ee_address) break;
+						TWI_TransmitByte(eeprom_read_byte(&my_ee_address + c));
+					break;
 				
-				case 0x03:				// write eeprom byte
-					c = TWI_Get_1Byte_From_Transceiver();
-					// - we need the space (costs 18 bytes) - if (c > 128 -(uint16_t)&my_ee_address) {TWI_Get_1Byte_From_Transceiver(); break;}
-					eeprom_write_byte(&my_ee_address + c, TWI_Get_1Byte_From_Transceiver() );
-				break;
+					case 0x03:				// write eeprom byte
+						c = TWI_Get_1Byte_From_Transceiver();
+						// - we need the space (costs 18 bytes) - if (c > 128 -(uint16_t)&my_ee_address) {TWI_Get_1Byte_From_Transceiver(); break;}
+						eeprom_write_byte(&my_ee_address + c, TWI_Get_1Byte_From_Transceiver() );
+					break;
 				
-				case 0x04:
-					printStrEE((uint8_t*)&my_ee_address + TWI_Get_1Byte_From_Transceiver() );
-				break;
+					case 0x04:
+						printStrEE((uint8_t*)&my_ee_address + TWI_Get_1Byte_From_Transceiver() );
+					break;
 				
-				case 0x10:				// number of characters in keypad buffer
-					TWI_TransmitByte((KeyHead-KeyTail)&0x0f);
-				break;
+					case 0x10:				// number of characters in keypad buffer
+						TWI_TransmitByte((KeyHead-KeyTail)&0x0f);
+					break;
 				
-				case 0x11:				// read keyboard
-					TWI_TransmitByte(readKeyb());
-				break;
-				
-				case 0x12:				// KeyDown
-					if (KeyTimer)
-						TWI_TransmitByte(0);
-					else
-						TWI_TransmitByte(LastKeyState);
-				break;
-				
-				case 0x13:				// Clear keybuff
-				#warning TODO
-					//KeyHead = KeyTail = 0;	//
-					//output_low(PORTA,1);	// clear interrupt
-				break;
-				
-				case 0x14:				// read keyboard bytes
-					c = TWI_Get_1Byte_From_Transceiver();
-					while (c--)
+					case 0x11:				// read keyboard
 						TWI_TransmitByte(readKeyb());
-				break;
+					break;
 				
-				case 0x15:				// switch off interrupt pin
-					PORTC &= ~(1<<PORTC4);
-				break;
+					case 0x12:				// KeyDown
+						if (KeyTimer)
+							TWI_TransmitByte(0);
+						else
+							TWI_TransmitByte(LastKeyState);
+					break;
 				
-				case 0x16:				// switch on interrupt pin
-					PORTC |= (1<<PORTC4);
-				break;
+					case 0x13:				// Clear keybuff
+						KeyHead = KeyTail = 0;
+						KBD_INT_PORT &= ~(1<<KBD_INT_BIT);	// clear interrupt
+					break;
 				
-				case 0xF0:				// Reset EEPROM to defaults and init all
-					//init_EE();
-				case 0xF1:				// software reset
-		//			init_mem();
-				break;
-			}
-		break;
+					case 0x14:				// read keyboard bytes
+						c = TWI_Get_1Byte_From_Transceiver();
+						while (c--)
+							TWI_TransmitByte(readKeyb());
+					break;
+				
+					case 0x15:				// switch off interrupt pin
+						KBD_INT_PORT &= ~(1<<KBD_INT_BIT);
+					break;
+				
+					case 0x16:				// switch on interrupt pin
+						KBD_INT_PORT |= (1<<KBD_INT_BIT);
+					break;
+				
+					case 0xF0:				// Reset EEPROM to defaults and init all
+						//init_EE();
+					case 0xF1:				// software reset
+			//			init_mem();
+					break;
+				}
+			break;
 
-		default:					// output whatever is received as data
-			print(b);
-		break;
+			default:					// output whatever is received as data
+				print(b);
+			break;
+		}
 	}
-
 	Event_Enable( I2CRX_EVENT, 1 );	
 }
 

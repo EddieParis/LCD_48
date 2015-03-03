@@ -35,4 +35,8 @@ void initKeyb(void);
 uint8_t readKeyb(void);
 void scanKeyb(void);	// called from timer interrupt
 
+#define KBD_DDR DDRD
+#define KBD_INT_PORT PORTD
+#define KBD_INT_BIT PORTD7
+
 #endif
