@@ -63,31 +63,9 @@ Modified 5th February 2010 John Crouchley for the ATTiny2313 I2C LCD controller
 
 //--------------------------------------------------------
 
-//pulse the Enable pin high (for a microsecond).
-//This clocks whatever command or data is in DB4~7 into the LCD controller.
-/*
-void pulseEnablePin(){
-  // send a pulse to enable
-  output_high(ENABLE_PORT, ENABLE_PIN);
-  delayMicroseconds(1);
-  output_low(ENABLE_PORT, ENABLE_PIN);
-  delayMicroseconds(1);
-}
-*/
-
-//push a nibble of data through the the LCD's DB4~7 pins, clocking with the Enable pin.
-//We don't care what RS and RW are, here.
-/*
-void pushNibble(uint8_t value){
-  output_nibble(LCD_INTERFACE_PORT, value);
-  pulseEnablePin();
-}
-*/
-
-//push a byte of data through the LCD's DB4~7 pins, in two steps, clocking each with the enable pin.
-void pushByte(uint8_t value){
-  //pushNibble(value >> 4);
-  //pushNibble(value);
+//push a byte of data through the LCD's pins, clocking with the enable pin.
+void pushByte(uint8_t value)
+{
 	output_high( ENABLE_PORT, ENABLE_PIN );
 	__asm__ __volatile__ (
 	"\tnop\n"
@@ -107,12 +85,6 @@ void pushByte(uint8_t value){
 
 
 //stuff the library user might call---------------------------------
-
-/*void commandWriteNibble(uint8_t nibble) {
-  output_low(RS_PORT, RS_PIN);
-  pushNibble(nibble);
-}
-*/
 
 void waitCompletion( void )
 {
@@ -144,23 +116,22 @@ void waitCompletion( void )
 
 void commandWrite(uint8_t value)
 {
+    // start by a wait completion to optimize CPU usage
+	waitCompletion();
+
     output_low(RS_PORT, RS_PIN);
     pushByte(value);
-	waitCompletion();
-/*
-  if (value < 0x04)	// home or clear command
-	delay(2);			// 2mS delay
-  else
-	delayMicroseconds(50);
-*/
+
 }
 
 //print the given character at the current cursor position. overwrites, doesn't insert.
-void print(uint8_t value) {
+void print(uint8_t value)
+{
+    // start by a wait completion to optimize CPU usage
+	waitCompletion();
+
     output_high(RS_PORT, RS_PIN); //set the RS pin to show we're writing data
     pushByte(value);		//let pushByte worry about the intricacies of Enable, nibble order.
-	waitCompletion();
-    //delayMicroseconds(50);
 }
 
 void printStrEE(uint8_t* value)
@@ -169,7 +140,8 @@ void printStrEE(uint8_t* value)
 }
 
 //send the clear screen command to the LCD
-void clear(){
+void clear()
+{
   commandWrite(CMD_CLR);
 }
 
@@ -182,21 +154,13 @@ void LCD_init (void)
 	ENABLE_DDR |= (1<<ENABLE_PIN);
 	RW_DDR |= (1<<RW_PIN);
 	DDRB = 0xFF;	// enable output on pins 0-7
-	//delayMicroseconds(50);		// why??
+
 	output_low(ENABLE_PORT, ENABLE_PIN);
  
-	//The first 4 nibbles and timings are not in my DEM16217 SYH datasheet, but apparently are HD44780 standard...
-	/*  commandWriteNibble(0x03);
-	delay(5);
-	commandWriteNibble(0x03);
-	delayMicroseconds(100);
-	commandWriteNibble(0x03);
-	delay(5);
-	*/
-	// needed by the LCDs controller
-	//this being 2 sets up 4-bit mode.
-	//commandWriteByte(0x02);
-
+    // This first write includes the wait for LCD to be ready,
+    // BF flag is set to 1 after power up, we must wait for HD77480
+    // end of init before sending first command
+    
 	//NFXX where
 	//N = num lines (0=1 line or 1=2 lines).
 	//F= format (number of dots (0=5x7 or 1=5x10)).

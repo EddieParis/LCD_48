@@ -22,7 +22,7 @@ volatile uint32_t readable_time;
 volatile uint8_t  can_read_time = 0;
 #endif
 
-volatile uint8_t EventOccurred = 0;
+volatile uint8_t TimerOccurred = 0;
 
 void Event_Init( void )
 {
@@ -122,7 +122,9 @@ EventId_t Event_Register( void (*func)(void *), void * arg )
 
 void Event_Enable(uint8_t EventId , uint8_t Enabled)
 {
+    cli();
 	Events[EventId].enabled = Enabled;
+    sei();
 }
 
 void Event_Signal( uint8_t EventId )
@@ -142,28 +144,6 @@ void Event_WaitNext( void )
 {
 	uint8_t index;
 	
-	while( EventOccurred == 0 )
-	{		
-		sleep_cpu();
-	}	
-
-#if TIMER_MAX != 0
-
-	Event_GetTime();
-
-	index = TIMER_MAX;
-	do
-	{
-		--index;
-		if ( Timers[index].current_ms < readable_time )
-		{
-			Timers[index].current_ms = 0xFFFFFFFF;
-			Timers[index].func(Timers[index].arg);
-		}
-	}
-	while( index );
-#endif
-
 #if EVENT_MAX != 0
 	index = EVENT_MAX;
 	do
@@ -174,11 +154,31 @@ void Event_WaitNext( void )
 			Events[index].func(Events[index].arg);
 		}
 	}
-	while(index);
+	while( index );
 #endif
-	
+
+#if TIMER_MAX != 0
+    if ( TimerOccurred )
+    {
+        Event_GetTime();
+
+        index = TIMER_MAX;
+        do
+        {
+	        --index;
+	        if ( Timers[index].current_ms < readable_time )
+	        {
+		        Timers[index].current_ms = 0xFFFFFFFF;
+		        Timers[index].func(Timers[index].arg);
+	        }
+        }
+        while( index );
+
 	/* don't need to protect this, because even if cleared after having being set by interrupt, a new interrupt happens in 1ms max */
-	EventOccurred = 0;
+	TimerOccurred = 0;
+
+    }
+#endif	
 }
 
 
@@ -200,14 +200,14 @@ ISR(TIMER1_COMPA_vect)
 		index--;
 		if ( Timers[index].current_ms < current_ms )
 		{
-			EventOccurred = 1;
+			TimerOccurred = 1;
 			break;
 		}
 	}
 	while( index );
 	
 	/* Don't need to parse event loop if timed event already happened */
-	if ( EventOccurred == 0 )
+/*	if ( TimerOccurred == 0 )
 	{
 		index = EVENT_MAX;
 		do
@@ -215,12 +215,12 @@ ISR(TIMER1_COMPA_vect)
 			index--;
 			if ( Events[index].enabled && Events[index].signal)
 			{
-				EventOccurred = 1 ;
+				TimerOccurred = 1 ;
 				break;
 			}
 		}
 		while( index );
-	}
+	}*/
 }
 /*
 ISR(TIM_INT_vect)

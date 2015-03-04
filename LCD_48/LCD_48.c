@@ -79,7 +79,6 @@ int main(void)
 
 void KbdScan( void * param )
 {
-	//print('a');
 	// reprogram scan in 5 ms
 	Event_TimerUpdate( 0, 5 );
 	scanKeyb();
@@ -115,7 +114,7 @@ void I2cRXFct( void * param)
 					break;
 				}
 			break;
-		
+	
 			case 0xFF:					// special commands
 				c = TWI_Get_1Byte_From_Transceiver();
 				switch (c)
@@ -191,9 +190,7 @@ void I2cRXFct( void * param)
 		}
 	}
 	
-	cli();
 	Event_Enable( I2CRX_EVENT, 1 );	
-	sei();
 }
 
 void KbdEvent( void * param)
