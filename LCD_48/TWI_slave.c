@@ -293,6 +293,8 @@ ISR(TWI_vect)
     case TWI_BUS_ERROR:         // Bus error due to an illegal START or STOP condition
       TWI_state = TWSR;                 //Store TWI State as errormessage, operation also clears noErrors bit
       TWCR =   (1<<TWSTO)|(1<<TWINT);   //Recover from TWI_BUS_ERROR, this will release the SDA and SCL pins thus enabling other devices to use the bus
+	  Event_Signal( I2CERR_EVENT );
+      TWI_busy = 0;						// Reset busy state
       break;
     default:     
       TWI_state = TWSR;                                 // Store TWI State as errormessage, operation also clears the Success bit.      

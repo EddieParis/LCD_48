@@ -17,10 +17,10 @@
 void KbdScan( void * param );
 
 void I2cRXFct( void * param);
-void KbdEvent( void * param);
+void I2cErrFct( void * param);
 
 timer_t Timers[TIMER_MAX]={{1000, KbdScan, 0}};
-event_t Events[EVENT_MAX]={{I2cRXFct, 0, 0 ,1},{KbdEvent, 0, 0, 1}};
+event_t Events[EVENT_MAX]={{I2cRXFct, 0, 0 ,1},{I2cErrFct, 0, 0, 1}};
 
 // defaults
 #define MY_ADDRESS 0x12
@@ -54,6 +54,15 @@ uint8_t EEMEM ee_spare=0;
 uint8_t EEMEM ee_keyb_map[13] = {0,'1','2','3','4','5','6','7','8','9','*','0','#'};
 uint8_t EEMEM ee_init_str[13] = {'R','A','S','P','B','E','R','R','Y',VERSION_HIGH,'.',VERSION_LOW,0};
 
+/*00011011
+00010101
+00010001
+00000000
+00011001
+00010101
+00010011
+00000000
+*/
 
 int main(void)
 {
@@ -120,7 +129,7 @@ void I2cRXFct( void * param)
 				switch (c)
 				{
 					case 0x01:				// back light 0=off 1=on
-							if (TWI_Get_1Byte_From_Transceiver())	// on
+						if (TWI_Get_1Byte_From_Transceiver())	// on
 							PORTC |= (1<<PORTC3);		// make sure it is on
 						else
 							PORTC &= ~(1<<PORTC3);		// make sure it is off
@@ -193,8 +202,9 @@ void I2cRXFct( void * param)
 	Event_Enable( I2CRX_EVENT, 1 );	
 }
 
-void KbdEvent( void * param)
+void I2cErrFct( void * param)
 {
-	
+	Event_ClearSignal( I2CERR_EVENT );
+	TWI_Start_Transceiver();
 }
 

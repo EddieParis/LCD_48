@@ -44,8 +44,9 @@ uint8_t performScan(void)
 	for (i=0; i<4; i++)
 	{
 		DDRD = (1<<KBD_INT_BIT)|(1 << i);	// scanned row as output
-		PORTD = 0x70;	// need this write after setting output bit - pullup on the columns
-					// and force a low output on the row.
+		PORTD &= (1<<KBD_INT_BIT); // clear row and preserve int
+		PORTD |= 0x70;	// need this write after setting output bit - pullup on the columns
+		
 		j=~(PIND >> 4) & 0x07;
 		DDRD = (1<<KBD_INT_BIT);		// set all rows back to input
 		if (j > 3) j=3;	// bit 0x04 = column 3
