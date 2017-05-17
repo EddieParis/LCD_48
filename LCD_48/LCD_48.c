@@ -15,11 +15,12 @@
 #include "Keyboard.h"
 
 void KbdScan( void * param );
+void Fader( void * param );
 
 void I2cRXFct( void * param);
 void I2cErrFct( void * param);
 
-timer_t Timers[TIMER_MAX]={{1000, KbdScan, 0}};
+timer_t Timers[TIMER_MAX]={{1000, KbdScan, 0},{1000,Fader, 0}};
 event_t Events[EVENT_MAX]={{I2cRXFct, 0, 0 ,1},{I2cErrFct, 0, 0, 1}};
 
 // defaults
@@ -33,7 +34,7 @@ event_t Events[EVENT_MAX]={{I2cRXFct, 0, 0 ,1},{I2cErrFct, 0, 0, 1}};
 #define LCD_CLEAR 0x01
 #define KEYB_DEBOUNCE 6	// 6x5 = 30 mS debounce
 
-uint8_t EEMEM b_my_ee_address = MY_ADDRESS;
+/*uint8_t EEMEM b_my_ee_address = MY_ADDRESS;
 uint8_t EEMEM b_my_ee_version_number = MY_VERSION_NUMBER;
 uint8_t EEMEM b_ee_lcd_function_mode = LCD_FUNCTION_MODE;
 uint8_t EEMEM b_ee_cursor_direction = CURSOR_DIRECTION;
@@ -42,7 +43,7 @@ uint8_t EEMEM b_ee_lcd_clear = LCD_CLEAR;
 uint8_t EEMEM b_ee_keyb_debounce = KEYB_DEBOUNCE;
 uint8_t EEMEM b_ee_spare=0;
 uint8_t EEMEM b_ee_keyb_map[13] = {0,'1','2','3','4','5','6','7','8','9','*','0','#'};
-uint8_t EEMEM b_ee_init_str[13] = {'R','A','S','P','B','E','R','R','Y',VERSION_HIGH,'.',VERSION_LOW,0};
+uint8_t EEMEM b_ee_init_str[13] = {'R','A','S','P','B','E','R','R','Y',VERSION_HIGH,'.',VERSION_LOW,0};*/
 uint8_t EEMEM my_ee_address = MY_ADDRESS;
 uint8_t EEMEM my_ee_version_number = MY_VERSION_NUMBER;
 uint8_t EEMEM ee_lcd_function_mode = LCD_FUNCTION_MODE;
@@ -72,7 +73,12 @@ int main(void)
 	TWI_Slave_Initialise(eeprom_read_byte(&my_ee_address)<<TWI_ADR_BITS|0<<TWI_GEN_BIT);
 
 	printStrEE((uint8_t*)&ee_init_str);
-
+	
+	//prepare Timer 0 for Backlight PWM (50% at startup)
+	TCCR0A = 1<<CTC0 | 1<<CS02; // Mode CTC divide by 256 (freq = 32kHz)
+	OCR0A = 100; // set max at 100 hence OCCRB will be a percentage.
+	OCR0B = 49;
+	TIMSK0 |= 1<<OCIE0A | 1<<OCIE0B;
 	sei();
 
     // Start the TWI transceiver to enable reception of the first command from the TWI Master.
@@ -128,11 +134,22 @@ void I2cRXFct( void * param)
 				c = TWI_Get_1Byte_From_Transceiver();
 				switch (c)
 				{
-					case 0x01:				// back light 0=off 1=on
-						if (TWI_Get_1Byte_From_Transceiver())	// on
-							PORTC |= (1<<PORTC3);		// make sure it is on
-						else
-							PORTC &= ~(1<<PORTC3);		// make sure it is off
+					case 0x01:				// back light %tage
+						c = TWI_Get_1Byte_From_Transceiver();
+						if ( c == 0 )
+						{
+							TCCR0A = 0;
+							PORTC &= ~(1<<PORTC3);
+						}
+						else if ( c <= 100 )
+						{
+							if ( TCCR0A == 0)
+							{
+								// start the timer
+								TCCR0A = 1<<CTC0 | 1<<CS02; // Mode CTC divide by 256 (freq = 32kHz)
+							}
+							OCR0B = c-1; // 99 in OCR0B is maximum, if c is 0 OCR0B is 0xFF then backlight is off
+						}
 					break;
 
 					case 0x02:				// read eeprom byte
@@ -208,3 +225,20 @@ void I2cErrFct( void * param)
 	TWI_Start_Transceiver();
 }
 
+ISR( TIMER0_COMPB_vect, ISR_NAKED )
+{
+	PORTC &= ~(1<<PORTC3);	
+	asm volatile( " reti" );
+}
+
+ISR( TIMER0_COMPA_vect, ISR_NAKED )
+{
+	PORTC |= (1<<PORTC3);
+	asm volatile( " reti" );
+}
+
+void Fader(void * param)
+{
+	
+	
+}

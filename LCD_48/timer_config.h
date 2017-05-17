@@ -14,7 +14,7 @@
 
 #define KBD_TIMER 0
 
-#define TIMER_MAX 1
+#define TIMER_MAX 2
 #define EVENT_MAX 2
 /*
 #define TIM_INT_PORT PORTD

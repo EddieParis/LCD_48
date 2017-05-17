@@ -186,11 +186,6 @@ ISR(TIMER1_COMPA_vect)
 {	
 	uint8_t index;
 
-	/* DEBUG */
-#ifdef DEBUG
-	PINB = 0x02;
-#endif
-
 	current_ms++;
 
 	index=TIMER_MAX;
