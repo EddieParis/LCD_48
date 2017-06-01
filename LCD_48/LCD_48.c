@@ -159,9 +159,10 @@ void I2cRXFct( void * param)
 					break;
 				
 					case 0x03:				// write eeprom byte
-						c = TWI_Get_1Byte_From_Transceiver();
+						// dangerous ! can erase eeprom with I2C glitches
+						//c = TWI_Get_1Byte_From_Transceiver();
 						// - we need the space (costs 18 bytes) - if (c > 128 -(uint16_t)&my_ee_address) {TWI_Get_1Byte_From_Transceiver(); break;}
-						eeprom_write_byte(&my_ee_address + c, TWI_Get_1Byte_From_Transceiver() );
+						//eeprom_write_byte(&my_ee_address + c, TWI_Get_1Byte_From_Transceiver() );
 					break;
 				
 					case 0x04:
