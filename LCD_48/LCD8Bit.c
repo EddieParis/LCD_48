@@ -161,20 +161,35 @@ void LCD_init (void)
     // BF flag is set to 1 after power up, we must wait for HD77480
     // end of init before sending first command
     
-	//NFXX where
-	//N = num lines (0=1 line or 1=2 lines).
-	//F= format (number of dots (0=5x7 or 1=5x10)).
-	//X=don't care
-	commandWrite(eeprom_read_byte(&ee_lcd_function_mode));
+	// display on (last bit)
+	commandWrite(0x3f);
 	
-	// display control:
-	// turn display on, cursor off, no blinking
-	commandWrite(eeprom_read_byte(&ee_cursor_direction));
+	// display start line(6 bits)
+	commandWrite(0xc0);
 
-	// entry mode
-	// increment automatically, display shift, entire shift off
-	commandWrite(eeprom_read_byte(&ee_entry_mode));
+	// set y address (6 bits)
+	commandWrite(0x40);
 
-	//clear display
-	commandWrite(eeprom_read_byte(&ee_lcd_clear));
+	// set X (3 bits)
+	commandWrite(0xB8);
+		
+	for (uint8_t i=0; i<64; i++)
+		print(i);
+	
+	////NFXX where
+	////N = num lines (0=1 line or 1=2 lines).
+	////F= format (number of dots (0=5x7 or 1=5x10)).
+	////X=don't care
+	//commandWrite(eeprom_read_byte(&ee_lcd_function_mode));
+	//
+	//// display control:
+	//// turn display on, cursor off, no blinking
+	//commandWrite(eeprom_read_byte(&ee_cursor_direction));
+//
+	//// entry mode
+	//// increment automatically, display shift, entire shift off
+	//commandWrite(eeprom_read_byte(&ee_entry_mode));
+//
+	////clear display
+	//commandWrite(eeprom_read_byte(&ee_lcd_clear));
 }
