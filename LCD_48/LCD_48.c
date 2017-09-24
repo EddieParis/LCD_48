@@ -72,7 +72,7 @@ int main(void)
 	Event_Init();
 	TWI_Slave_Initialise(eeprom_read_byte(&my_ee_address)<<TWI_ADR_BITS|0<<TWI_GEN_BIT);
 
-	printStrEE((uint8_t*)&ee_init_str);
+	//printStrEE((uint8_t*)&ee_init_str);
 	
 	//prepare Timer 0 for Backlight PWM (50% at startup)
 	TCCR0A = 1<<CTC0 | 1<<CS02; // Mode CTC divide by 256 (freq = 32kHz)
@@ -96,7 +96,7 @@ void KbdScan( void * param )
 {
 	// reprogram scan in 5 ms
 	Event_TimerUpdate( 0, 5 );
-	scanKeyb();
+	//scanKeyb();
 }
 
 void I2cRXFct( void * param)

@@ -154,6 +154,7 @@ void LCD_init (void)
 	ENABLE_DDR |= (1<<ENABLE_PIN);
 	RW_DDR |= (1<<RW_PIN);
 	DDRB = 0xFF;	// enable output on pins 0-7
+	DDRD |= 0x03;
 
 	output_low(ENABLE_PORT, ENABLE_PIN);
  
@@ -161,6 +162,12 @@ void LCD_init (void)
     // BF flag is set to 1 after power up, we must wait for HD77480
     // end of init before sending first command
     
+	output_high(PORTD, 0);
+	output_high(PORTD, 1);
+
+	output_low(PORTD,0);
+	output_high(PORTD,1);
+	
 	// display on (last bit)
 	commandWrite(0x3f);
 	
@@ -170,11 +177,36 @@ void LCD_init (void)
 	// set y address (6 bits)
 	commandWrite(0x40);
 
-	// set X (3 bits)
-	commandWrite(0xB8);
+	for (uint8_t j=0; j<8; j++)
+	{	
+		// set X (3 bits)
+		commandWrite(0xB8+j);
 		
-	for (uint8_t i=0; i<64; i++)
+		for (uint8_t i=0; i<64; i++)
+			print(i);
+	}
+
+	output_high(PORTD,0);
+	output_low(PORTD,1);
+	
+	// display on (last bit)
+	commandWrite(0x3f);
+	
+	// display start line(6 bits)
+	commandWrite(0xc0);
+
+	// set y address (6 bits)
+	commandWrite(0x40);
+
+	for (uint8_t j=0; j<8; j++)
+	{
+		// set X (3 bits)
+		commandWrite(0xB8+j);
+		
+		for (int8_t i=63; i!=-1; i--)
 		print(i);
+	}
+
 	
 	////NFXX where
 	////N = num lines (0=1 line or 1=2 lines).
